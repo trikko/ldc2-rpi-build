@@ -19,8 +19,8 @@ RUN mkdir /ldc-build && cd /ldc-build && \
   cmake --build . --target install -j12
 
 # PATCH TO FIX A BUG IN STD.PROCESS
-RUN cat /ldc-$LDC_VERSION-src/runtime/phobos/std/process.d | sed 's/if (poll(pfds, maxToClose, 0) >= 0)/version (none)/g' > /tmp/process.d
-RUN mv /tmp/process.d /ldc-$LDC_VERSION-src/runtime/phobos/std/process.d 
+#RUN cat /ldc-$LDC_VERSION-src/runtime/phobos/std/process.d | sed 's/if (poll(pfds, maxToClose, 0) >= 0)/version (none)/g' > /tmp/process.d
+#RUN mv /tmp/process.d /ldc-$LDC_VERSION-src/runtime/phobos/std/process.d
 
 RUN mkdir /ldc-build-bootstrap && cd /ldc-build-bootstrap && \
   cmake ../ldc-$LDC_VERSION-src \
@@ -45,13 +45,15 @@ RUN cp dlang-tools/bin/ddemangle /ldc-bootstrapped/bin/
 RUN cp dlang-tools/bin/dustmite /ldc-bootstrapped/bin/
 
 RUN git clone --recursive https://github.com/dlang/dub.git
-RUN cd dub && git checkout `cat /ldc-$LDC_VERSION-src/packaging/dub_version` && $DMD -run build.d -O -w -linkonce-templates
+RUN ulimit -n 1024 && cd dub && git checkout `cat /ldc-$LDC_VERSION-src/packaging/dub_version` && $DMD -run build.d -O -w -linkonce-templates
 RUN cp dub/bin/dub ldc-bootstrapped/bin
 
 RUN git clone --recursive https://github.com/atilaneves/reggae.git
 RUN cd reggae && git checkout `cat /ldc-$LDC_VERSION-src/packaging/reggae_version`
-RUN cd reggae && DFLAGS="-O -linkonce-templates" /ldc-bootstrapped/bin/dub build -v --build-mode=allAtOnce --combined
+RUN ulimit -n 1024 && cd reggae && DFLAGS="-O -linkonce-templates" /ldc-bootstrapped/bin/dub build -v --build-mode=allAtOnce --combined
 RUN cp reggae/bin/reggae /ldc-bootstrapped/bin
 
 RUN mv /ldc-bootstrapped /ldc-$LDC_VERSION
-ENTRYPOINT mkdir -p deploy && tar czf /deploy/ldc-$LDC_VERSION-arm-bullseye.tar.gz /ldc-$LDC_VERSION/*
+
+ENV PATH="$PATH:/ldc-$LDC_VERSION/bin"
+WORKDIR /source
