@@ -1,4 +1,4 @@
-# ldc2-rpi-build
+## Build ldc2 for your raspberry pi, using a docker
 
 To build and put the ldc2 package in /tmp/deploy:
 
